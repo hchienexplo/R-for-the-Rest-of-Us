@@ -1,0 +1,89 @@
+---
+title: "Week 4 Assignment"
+author: "Hsin-Yi Chien"
+date: "2022-10-11"
+output: html_document
+---
+
+```{r setup, include= FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, echo = FALSE, message=FALSE, warning=FALSE}
+library(tidyverse)
+library(janitor)
+library(tidytext)
+library(rstatix)
+library(hrbrthemes)
+library(ggthemes)
+
+coves_fy22<-read_csv("FY22 COVES_values.csv") #import "FY22 COVES_values.csv" data
+
+```
+
+# FY22 COVES Annual Report
+
+Visitor Research and Evaluation (VRE) collected exit surveys between *July 1, 2021 and June 30, 2022* to gain a better understanding of our **visitor demographics** and **visitor experience** during their visit to the Exploratorium.
+
+## Group Size & Overall Experience Rating
+
+```{r group-size, echo=TRUE, include=TRUE, message=FALSE, warning=FALSE}
+
+#create a "group type" var based on whether there is any children in the group
+for (i in (1:nrow(coves_fy22))){
+  if (is.na(coves_fy22$Nchild[i])){
+    coves_fy22$group_type[i] <- NA
+  } else if (!is.na(coves_fy22$Nchild[i]) & coves_fy22$Nchild[i] == 0){
+    coves_fy22$group_type[i] <-"Adult Only"
+  } else if (!is.na(coves_fy22$Nchild[i]) & coves_fy22$Nchild[i] > 0){
+    coves_fy22$group_type[i] <-"Family Group with Child(ren)"
+  }
+}
+
+#check if the above scripts are successful
+coves_fy22 %>%
+  select(Nchild, group_type)
+
+#add labels to OER
+coves_fy22$OER<-factor(coves_fy22$OER, 
+                       levels = c(1,2,3,4,5),
+                       labels = c("Poor", "Fair", "Good", "Excellent", "Outstanding"), 
+                       ordered = TRUE)
+
+#create a data frame that summarizes OER breakdown by gorup_type
+
+coves_fy22_OER_grouptype <- coves_fy22 %>%
+  drop_na(OER, group_type) %>%
+  group_by(group_type, OER) %>%
+  summarize(count = n())
+
+coves_fy22_OER_grouptype <- coves_fy22_OER_grouptype %>% 
+  group_by(group_type) %>%
+  mutate(
+    OER = OER,
+    count = count,
+    sum_total = sum(count),
+    percentage = count/sum_total) 
+
+
+
+```
+
+The following plot shows the breakdown of Overall Experience Rating by Group Type (Adult-only vs. Family Group):
+
+```{r OER_group_type_plot, echo=TRUE, include=TRUE, message=FALSE, warning=FALSE}
+coves_fy22_OER_grouptype %>%
+  mutate(OER = fct_relevel(OER, "Poor", "Fair", "Good", "Excellent", "Outstanding")) %>%
+  ggplot(aes(x = group_type, y = percentage, fill = OER))+
+  geom_col(position = position_dodge()) +
+  scale_fill_brewer(palette = "Blues") +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1))+
+  geom_text(aes(label= paste0(round(percentage*100,1), "%")), vjust=0, color="black",
+            position = position_dodge(0.95), size= 3)+
+  theme_economist()+
+  labs(title = "Overall Experience Rating by Group Type",
+       x ="",
+       y = "Percentage")+
+  theme(legend.title=element_blank())
+```
+

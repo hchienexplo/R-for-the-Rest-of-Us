@@ -1,0 +1,64 @@
+---
+title: "Week 2 Assignment"
+author: "Hsin-Yi Chien"
+date: "2022-09-27"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, echo = FALSE, message=FALSE, warning=FALSE}
+coves_fy22<-read.csv("FY22 COVES_labels.csv", header = TRUE)
+attach(coves_fy22)
+library(ggplot2)
+library(dplyr)
+library(stringr)
+library(tidyverse)
+library(tidytext)
+library(rstatix)
+```
+
+# FY22 COVES Annual Report
+
+Visitor Research and Evaluation (VRE) collected exit surveys between *July 1, 2021 and June 30, 2022* to gain a better understanding of our **visitor demographics** and **visitor experience** during their visit to the Exploratorium.
+
+## Group Demographics
+
+The COVES protocol involves selecting one adult from a visitor group to be the primary respondent, but the survey asks for some information that describes *the entire visiting group*.
+
+### Group Size
+
+-   **Average** number of *adults* in a group = 2.1
+-   **Median** number of *adults* in a group = 2
+-   **Average** number of *children* in a group = 0.95
+-   **Median** number of *children* in a group = 1
+
+```{r group-size, echo=TRUE, include=TRUE, message=FALSE, warning=FALSE}
+#show the summary descriptives for the number of adults in sampled groups
+round(summary(as.numeric(Nadults)),2)
+round(sd(as.numeric(Nadults), na.rm = TRUE),2)
+#show the summary descriptives for the number of children in sampled groups
+round(summary(as.numeric(Nchild)),2)
+round(sd(as.numeric(Nchild), na.rm = TRUE),2)
+```
+
+```{r pressure, echo=TRUE, include=TRUE, message=FALSE, warning=FALSE}
+coves_fy22[!is.na(as.numeric(Nadults)), ] %>%
+  ggplot(aes(x = as.numeric(Nadults))) +
+  geom_histogram() +
+  scale_x_continuous(breaks = seq(0:10))+
+  labs(title = "Histogram of Number of Adults in a Group")+
+  xlab("Number of Adults in a Group") +
+  ylab("Count")
+  
+coves_fy22[!is.na(as.numeric(Nchild)), ] %>%
+  ggplot(aes(x = as.numeric(Nchild))) +
+  geom_histogram() +
+  scale_x_continuous(breaks = seq(0:10))+
+  labs(title = "Histogram of Number of Children in a Group")+
+  xlab("Number of Children  in a Group") +
+  ylab("Count")  
+
+```
